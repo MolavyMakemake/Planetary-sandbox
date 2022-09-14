@@ -5,15 +5,40 @@ using UnityEngine;
 public class Gravity : MonoBehaviour
 {
     public float G = 1;
+    static public List<Body> bodies = new List<Body>();
 
-    Vector3 v = Vector3.left / 1.5f;
+    void Solve(Body A, Body B)
+    {
+        if (A.isStatic && B.isStatic)
+            return;
+
+        Vector3 AB = B.position - A.position;
+
+        float I = Time.fixedDeltaTime * G * A.mass * B.mass / AB.sqrMagnitude;
+
+        Vector3 n = AB.normalized;
+
+        if (!A.isStatic)
+        {
+            A.velocity += I / A.mass * n;
+            A.position += Time.fixedDeltaTime * A.velocity;
+        }
+        if (!B.isStatic)
+        {
+            B.velocity -= I / B.mass * n;
+            B.position += Time.fixedDeltaTime * B.velocity;
+        }
+    }
 
     void FixedUpdate()
     {
-        Vector3 p = transform.position;
-        v -= G * p.normalized * Time.fixedDeltaTime / p.sqrMagnitude;
-        transform.position += Time.fixedDeltaTime * v;
+        int nBodies = bodies.Count;
 
-        transform.rotation = Quaternion.LookRotation(-transform.position);
+        for (int i = 0; i < nBodies; i++)
+            for (int j = i + 1; j < nBodies; j++)
+                Solve(bodies[i], bodies[j]);
+
+        foreach (Body b in bodies)
+            b.UpdatePosition();
     }
 }
